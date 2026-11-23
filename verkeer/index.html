@@ -52,6 +52,15 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline
 .chip[aria-pressed="true"] { border-color: var(--sign-blue); background: var(--sign-blue-soft); color: var(--sign-blue) }
 
 /* Voortgang */
+.timer { display: grid; gap: 6px }
+.timer-top { display: flex; justify-content: space-between; align-items: center; font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums }
+.timer-top b { font-family: var(--font-display); font-size: 1.15rem; color: var(--fg) }
+.timer-bar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden }
+.timer-bar > i { display: block; height: 100%; width: 100%; background: var(--good); border-radius: 99px; transition: width .2s linear, background .3s }
+.timer.warn .timer-bar > i { background: var(--amber) }
+.timer.danger .timer-bar > i { background: var(--bad) }
+.timer.danger .timer-top b { color: var(--bad) }
+.timer.paused .timer-bar > i { opacity: .45 }
 .progress { display: flex; align-items: center; gap: 12px; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .95rem }
 .bar { flex: 1; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden }
 .bar > i { display: block; height: 100%; background: var(--sign-blue); width: 0; transition: width .3s }
@@ -129,6 +138,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
     <div class="tools">
       <button class="chip" id="autoread" aria-pressed="true" title="Lees elke vraag automatisch voor">🔊 Automatisch voorlezen</button>
       <button class="chip" id="tempo" title="Spreeksnelheid">Tempo: <span id="tempoLabel">langzaam</span></button>
+      <button class="chip" id="timerKnop" title="Tijd per vraag">⏱ Timer: <span id="timerLabel">30 s</span></button>
     </div>
   </header>
 
@@ -185,12 +195,23 @@ let autoRead = store.get("auto", true);
 const TEMPI = [["langzaam", 1], ["heel langzaam", 0.85], ["normaal", 1.15]];
 let tempoIdx = store.get("tempo", 0) % TEMPI.length;
 
+const TIJDEN = [30, 45, 60, 20, 0];  // seconden per vraag, 0 = geen timer
+let tijdIdx = store.get("tijd", 0) % TIJDEN.length;
+const $timerKnop = document.getElementById("timerKnop");
 const $auto = document.getElementById("autoread");
 const $tempo = document.getElementById("tempo");
 function syncTools() {
   $auto.setAttribute("aria-pressed", autoRead);
   document.getElementById("tempoLabel").textContent = TEMPI[tempoIdx][0];
+  document.getElementById("timerLabel").textContent = TIJDEN[tijdIdx] ? TIJDEN[tijdIdx] + " s" : "uit";
+  $timerKnop.setAttribute("aria-pressed", TIJDEN[tijdIdx] > 0);
 }
+$timerKnop.onclick = () => {
+  tijdIdx = (tijdIdx + 1) % TIJDEN.length; store.set("tijd", tijdIdx); syncTools();
+  // nieuwe instelling geldt meteen voor de huidige vraag (als die nog open staat)
+  const card = app.querySelector(".card"), v = reeks[pos];
+  if (card && card.querySelector(".qrow") && v && antwoorden[v.nr] === undefined) startTimer(card, v);
+};
 $auto.onclick = () => { autoRead = !autoRead; store.set("auto", autoRead); syncTools(); if (!autoRead) stopAudio(); };
 $tempo.onclick = () => { tempoIdx = (tempoIdx + 1) % TEMPI.length; store.set("tempo", tempoIdx); syncTools(); player.playbackRate = TEMPI[tempoIdx][1]; };
 syncTools();
@@ -198,24 +219,25 @@ syncTools();
 // ---------- audio ----------
 const player = new Audio();
 player.preservesPitch = true;
-let queue = [], playToken = 0, activeBtn = null;
+let queue = [], playToken = 0, activeBtn = null, spreekt = false;
 function setActive(btn) { if (activeBtn) activeBtn.classList.remove("playing"); activeBtn = btn; if (btn) btn.classList.add("playing"); }
-function stopAudio() { playToken++; queue = []; player.pause(); setActive(null); }
+function stopAudio() { playToken++; queue = []; player.pause(); setActive(null); spreekt = false; }
 // items: [{src, btn}]
 function playSeq(items) {
   stopAudio();
   const token = playToken;
   queue = items.slice();
+  spreekt = true;
   const next = () => {
     if (token !== playToken) return;
     const it = queue.shift();
-    if (!it) { setActive(null); return; }
+    if (!it) { setActive(null); spreekt = false; return; }
     setActive(it.btn || null);
     player.src = "audio/" + it.src + ".mp3";
     player.playbackRate = TEMPI[tempoIdx][1];
     player.onended = () => setTimeout(next, it.gap ?? 350);
     player.onerror = () => next();
-    player.play().catch(() => setActive(null));
+    player.play().catch(() => { setActive(null); spreekt = false; });
   };
   next();
 }
@@ -230,7 +252,7 @@ function esc(s) { return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 
 // ---------- startscherm ----------
 function toonStart() {
-  stopAudio();
+  stopAudio(); stopTimer();
   const per = LESSEN.map(l => VRAGEN.filter(v => v.les === l).length);
   app.innerHTML = "";
   const card = el(`<section class="card">
@@ -290,6 +312,42 @@ function vulImg(fig) {
   };
 }
 
+// ---------- timer ----------
+// Loopt alleen als er niets voorgelezen wordt: eerst luisteren, dan telt de tijd.
+let timerId = null;
+function stopTimer() { clearInterval(timerId); timerId = null; }
+function startTimer(card, v) {
+  stopTimer();
+  const oud = card.querySelector(".timer"); if (oud) oud.remove();
+  const totaal = TIJDEN[tijdIdx];
+  if (!totaal) return;
+  const t = el(`<div class="timer" role="timer"><div class="timer-top"><span class="timer-status"></span><b class="timer-sec"></b></div><div class="timer-bar"><i></i></div></div>`);
+  card.querySelector(".qrow").before(t);
+  let over = totaal * 1000, vorige = performance.now();
+  const teken = () => {
+    const sec = Math.ceil(over / 1000);
+    t.querySelector(".timer-sec").textContent = sec + " s";
+    t.querySelector(".timer-bar i").style.width = (over / (totaal * 1000)) * 100 + "%";
+    t.querySelector(".timer-status").textContent = spreekt ? "⏸ Luister eerst" : "Nog";
+    t.classList.toggle("paused", spreekt);
+    t.classList.toggle("warn", sec <= 10 && sec > 5);
+    t.classList.toggle("danger", sec <= 5);
+  };
+  teken();
+  timerId = setInterval(() => {
+    const nu = performance.now(), dt = nu - vorige; vorige = nu;
+    if (!document.body.contains(t)) return stopTimer();
+    if (!spreekt && !document.hidden) over -= dt;
+    if (over <= 0) { over = 0; teken(); stopTimer(); tijdOm(card, v); return; }
+    teken();
+  }, 200);
+}
+function tijdOm(card, v) {
+  if (antwoorden[v.nr] !== undefined) return;
+  antwoorden[v.nr] = -1;  // -1 = geen antwoord gegeven
+  toonUitslag(card, v, -1, true);
+}
+
 function leesVraag(card, v) {
   const items = [{ src: code(v), btn: card.querySelector(".qrow .speak") }];
   card.querySelectorAll(".ans").forEach((a, j) => items.push(...antwoordAudio(v, j, a.querySelector(".speak"))));
@@ -335,8 +393,9 @@ function toonVraag() {
   card.querySelector("#terug").onclick = () => { if (pos === 0) toonStart(); else { pos--; toonVraag(); } };
   card.querySelector("#volgende").onclick = volgende;
 
+  stopTimer();
   if (gekozen !== undefined) toonUitslag(card, v, gekozen, false);
-  else if (autoRead) leesVraag(card, v);
+  else { if (autoRead) leesVraag(card, v); startTimer(card, v); }
   window.scrollTo({ top: 0 });
 }
 
@@ -347,6 +406,8 @@ function kies(card, v, j) {
 }
 
 function toonUitslag(card, v, j, metGeluid) {
+  stopTimer();
+  const tm = card.querySelector(".timer"); if (tm) tm.remove();
   const ok = j === v.c;
   card.querySelectorAll(".ans").forEach(a => {
     const k = +a.dataset.j;
@@ -357,12 +418,12 @@ function toonUitslag(card, v, j, metGeluid) {
   const fb = card.querySelector(".feedback");
   fb.hidden = false;
   fb.className = "feedback " + (ok ? "good" : "bad");
-  fb.textContent = ok ? "Goed zo! Dat is juist." : `Niet juist. Het juiste antwoord is ${L[v.c]}: ${v.a[v.c]}`;
+  fb.textContent = ok ? "Goed zo! Dat is juist." : `${j === -1 ? "De tijd is om." : "Niet juist."} Het juiste antwoord is ${L[v.c]}: ${v.a[v.c]}`;
   const nb = card.querySelector("#volgende");
   nb.disabled = false;
   if (metGeluid) {
     const juistBtn = card.querySelector(".ans.correct .speak");
-    playSeq(ok ? [{ src: "goed" }] : [{ src: "fout" }, { src: "juist-" + L[v.c].toLowerCase(), btn: juistBtn, gap: 0 }, { src: code(v) + v.f[v.c], btn: juistBtn }]);
+    playSeq(ok ? [{ src: "goed" }] : [{ src: j === -1 ? "tijd-om" : "fout" }, { src: "juist-" + L[v.c].toLowerCase(), btn: juistBtn, gap: 0 }, { src: code(v) + v.f[v.c], btn: juistBtn }]);
     nb.focus({ preventScroll: true });
     const prog = document.querySelector(".progress span:last-child");
     if (prog) prog.textContent = "✔ " + aantalJuist();
@@ -376,6 +437,7 @@ function volgende() {
 
 // ---------- einde ----------
 function toonEinde() {
+  stopTimer();
   const fout = reeks.filter(v => antwoorden[v.nr] !== v.c);
   const goed = reeks.length - fout.length;
   app.innerHTML = "";

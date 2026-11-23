@@ -43,6 +43,7 @@ for i, v in enumerate(vragen, 1):
 for name, text in {
     "goed": "Goed zo! Dat is juist.",
     "fout": "Dat is niet juist.",
+    "tijd-om": "De tijd is om.",
     "welkom": "Welkom bij de herhalingsquiz verkeer. Hoofdstuk 1 tot en met 6. Luister naar de vraag. Kies dan A, B of C.",
     "einde": "Klaar! Goed gewerkt.",
     **{f"letter-{x.lower()}": f"{x}." for x in L},
