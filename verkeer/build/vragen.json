@@ -38,7 +38,7 @@
 {"img":28,"q":"Een voetganger staat aan de rand van een zebrapad. Hij wil oversteken. Wat doe jij met je auto?","a":["Ik rij door","Ik vertraag en ik stop indien nodig","Ik claxonneer"],"c":1},
 {"img":27,"q":"Een auto vertraagt voor een zebrapad. Mag je die auto inhalen?","a":["Ja, links","Nee","Ja, rechts"],"c":1},
 {"q":"Waar mag je NIET parkeren of stilstaan?","a":["Op de oversteekplaats en 5 meter ervoor","Voorbij de oversteekplaats","Op een parkeervak"],"c":0},
-{"img":18,"q":"Dit is een doorlopend fietspad. Wie krijgt voorrang?","a":["De auto die de zijstraat inrijdt","De fietser","Niemand"],"c":1},
+{"img":18,"q":"Dit is een doorlopend fietspad. Wie krijgt voorrang?","a":["De auto","De fietser","Niemand"],"c":1},
 {"les":"Les 5 en 6: Autosnelweg en autoweg","q":"Wat zie je NIET op een autosnelweg?","a":["Een brug","Een tunnel","Een kruispunt"],"c":2},
 {"q":"Welk voertuig mag NIET op een autosnelweg?","a":["Een personenauto","Een bromfiets","Een vrachtwagen"],"c":1},
 {"q":"Wanneer mag je stoppen op de pechstrook?","a":["Om naar de GPS te kijken","Om te bellen met een vriend","Bij pech of bij een ongeval"],"c":2},
