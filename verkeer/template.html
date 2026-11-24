@@ -34,8 +34,8 @@
 
 * { box-sizing: border-box }
 body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 18px; line-height: 1.5;
-  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px }
-.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 18px }
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 12px 32px }
+.wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 12px }
 h1, h2, .display { font-family: var(--font-display); text-wrap: balance; margin: 0 }
 button { font: inherit; color: inherit; cursor: pointer }
 button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px }
@@ -43,31 +43,36 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline
 /* Kop */
 .top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap }
 .top h1 { font-size: 1.35rem; font-weight: 800; flex: 1; min-width: 0 }
-.logo { flex: none; height: 60px; width: auto; display: block; background: #fff; border-radius: 12px; padding: 4px 8px; pointer-events: none; user-select: none }
-@media (max-width: 480px) { .logo { height: 46px } }
+.logo { flex: none; height: 50px; width: auto; display: block; background: #fff; border-radius: 12px; padding: 4px 8px; pointer-events: none; user-select: none }
+@media (max-width: 480px) { .logo { height: 40px; padding: 3px 6px } }
 .tools { display: flex; gap: 8px; flex-wrap: wrap }
 .chip { border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 14px; font-size: .9rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px }
+.chip .kort { display: none }
 .chip[aria-pressed="true"] { border-color: var(--sign-blue); background: var(--sign-blue-soft); color: var(--sign-blue) }
 
 /* Voortgang */
-.timer { display: grid; gap: 6px }
-.timer-top { display: flex; justify-content: space-between; align-items: center; font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums }
-.timer-top b { font-family: var(--font-display); font-size: 1.15rem; color: var(--fg) }
+.timer { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums }
+.timer-top { display: contents }
+.timer-status { grid-column: 1; grid-row: 1; white-space: nowrap }
+.timer-bar { grid-column: 2; grid-row: 1 }
+.timer-sec { grid-column: 3; grid-row: 1; min-width: 3.2ch; text-align: right }
+.timer-sec { font-family: var(--font-display); font-size: 1.15rem; color: var(--fg) }
 .timer-bar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden }
 .timer-bar > i { display: block; height: 100%; width: 100%; background: var(--good); border-radius: 99px; transition: width .2s linear, background .3s }
 .timer.warn .timer-bar > i { background: var(--amber) }
 .timer.danger .timer-bar > i { background: var(--bad) }
-.timer.danger .timer-top b { color: var(--bad) }
+.timer.danger .timer-sec { color: var(--bad) }
 .timer.paused .timer-bar > i { opacity: .45 }
-.progress { display: flex; align-items: center; gap: 12px; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .95rem }
-.bar { flex: 1; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden }
+.progress { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .95rem }
+.progress .les { font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: .8rem }
+.bar { flex: 1 1 120px; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden }
 .bar > i { display: block; height: 100%; background: var(--sign-blue); width: 0; transition: width .3s }
 
 /* Kaart */
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: grid; gap: 18px }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: grid; gap: 16px }
 .eyebrow { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700 }
 .qrow { display: flex; gap: 14px; align-items: flex-start }
-.qtext { font-family: var(--font-display); font-weight: 800; font-size: 1.55rem; line-height: 1.3; flex: 1; min-width: 0; text-wrap: balance }
+.qtext { font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.3; flex: 1; min-width: 0; text-wrap: balance }
 .qnum { color: var(--sign-blue) }
 
 .speak { flex: none; width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--sign-blue); background: var(--sign-blue-soft); color: var(--sign-blue); display: grid; place-items: center }
@@ -78,14 +83,22 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline
 
 /* Afbeelding */
 .figure { margin: 0; border-radius: 12px; overflow: hidden; background: var(--bg); display: grid; place-items: center }
-.figure img { display: block; max-height: 340px; width: auto; max-width: 100%; object-fit: contain }
+.figure img { display: block; width: auto; max-width: 100%; height: auto; max-height: 26vh; max-height: 26svh; object-fit: contain }
+/* Vraag met afbeelding: op brede schermen afbeelding links, vraag en antwoorden rechts */
+.vraag-layout { display: grid; gap: 16px; min-width: 0 }
+.col-vraag { display: grid; gap: 14px; min-width: 0; align-content: start }
+@media (min-width: 860px) {
+  .vraag-layout.met-afb { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; gap: 24px }
+  .met-afb .figure img { max-height: calc(100vh - 190px); max-height: calc(100svh - 190px) }
+  .vraag-layout:not(.met-afb) .col-vraag { width: 100%; max-width: 760px; margin-inline: auto }
+}
 .placeholder { padding: 26px 20px; text-align: center; color: var(--muted); border: 2px dashed var(--line); border-radius: 12px; width: 100%; display: grid; gap: 6px; justify-items: center }
 .placeholder b { color: var(--fg) }
 
 /* Antwoorden */
-.answers { display: grid; gap: 12px }
+.answers { display: grid; gap: 10px }
 .ans { display: flex; gap: 10px; align-items: stretch }
-.pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; text-align: left; padding: 12px 16px; border: 2px solid var(--line); background: var(--card); border-radius: 14px; font-size: 1.15rem; min-height: 64px; transition: border-color .15s, background .15s }
+.pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; text-align: left; padding: 12px 16px; border: 2px solid var(--line); background: var(--card); border-radius: 14px; font-size: 1.15rem; line-height: 1.3; min-height: 56px; transition: border-color .15s, background .15s }
 .pick:hover:not(:disabled) { border-color: var(--sign-blue) }
 .pick:disabled { cursor: default }
 .letter { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; background: var(--sign-blue); color: #fff }
@@ -102,7 +115,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline
 .feedback.bad { background: var(--bad-soft); color: var(--bad) }
 
 .nav { display: flex; gap: 12px; justify-content: space-between; flex-wrap: wrap }
-.btn { border: 0; border-radius: 14px; padding: 14px 24px; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; background: var(--sign-blue); color: #fff }
+.btn { border: 0; border-radius: 14px; padding: 12px 24px; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; background: var(--sign-blue); color: #fff }
 .btn.ghost { background: transparent; color: var(--sign-blue); border: 2px solid var(--sign-blue) }
 .btn:disabled { opacity: .4; cursor: default }
 
@@ -121,9 +134,25 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
 
 @media (max-width: 480px) {
   body { font-size: 17px }
-  .qtext { font-size: 1.3rem }
-  .card { padding: 16px }
-  .pick { font-size: 1.05rem; padding: 10px 12px }
+  .wrap { gap: 10px }
+  .top { gap: 8px 10px }
+  .top h1 { font-size: 1.1rem }
+  .chip { padding: 4px 10px; font-size: .8rem }
+  .chip .lang { display: none }
+  .chip .kort { display: inline }
+  .tools { gap: 6px }
+  .figure img { max-height: 22vh; max-height: 22svh }
+  .timer { font-size: .8rem; gap: 8px }
+  .timer-bar { height: 8px }
+  .card { padding: 14px; gap: 12px }
+  .vraag-layout, .col-vraag { gap: 10px }
+  .qtext { font-size: 1.2rem }
+  .speak { width: 44px; height: 44px }
+  .speak.small { width: 40px; height: 40px }
+  .answers { gap: 8px }
+  .pick { font-size: 1.02rem; padding: 6px 10px; min-height: 50px; gap: 10px }
+  .letter { width: 34px; height: 34px; font-size: 1.05rem }
+  .btn { padding: 10px 18px; font-size: 1.05rem }
   .keys { display: none }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important } }
@@ -134,9 +163,9 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
     <img class="logo" src="images/logo.png" alt="Ligo" width="600" height="218">
     <h1>Herhalingsquiz Verkeer</h1>
     <div class="tools">
-      <button class="chip" id="autoread" aria-pressed="true" title="Lees elke vraag automatisch voor">🔊 Automatisch voorlezen</button>
-      <button class="chip" id="tempo" title="Spreeksnelheid">Tempo: <span id="tempoLabel">langzaam</span></button>
-      <button class="chip" id="timerKnop" title="Tijd per vraag">⏱ Timer: <span id="timerLabel">30 s</span></button>
+      <button class="chip" id="autoread" aria-pressed="true" title="Lees elke vraag automatisch voor">🔊 <span class="lang">Automatisch voorlezen</span><span class="kort">voorlezen</span></button>
+      <button class="chip" id="tempo" title="Spreeksnelheid"><span class="lang">Tempo: </span><span id="tempoLabel">langzaam</span></button>
+      <button class="chip" id="timerKnop" title="Tijd per vraag">⏱ <span class="lang">Timer: </span><span id="timerLabel">30 s</span></button>
     </div>
   </header>
 
@@ -357,10 +386,11 @@ function toonVraag() {
   const gekozen = antwoorden[v.nr];
   app.innerHTML = "";
   const juist = aantalJuist();
-  app.append(el(`<div class="progress"><span>${pos + 1} / ${reeks.length}</span><div class="bar"><i style="width:${(pos / reeks.length) * 100}%"></i></div><span>✔ ${juist}</span></div>`));
-  const card = el(`<section class="card">
-    <div class="eyebrow">${esc(v.les)}</div>
+  app.append(el(`<div class="progress"><span class="les">${esc(v.les.split(":")[0])}</span><span>${pos + 1} / ${reeks.length}</span><div class="bar"><i style="width:${(pos / reeks.length) * 100}%"></i></div><span>✔ ${juist}</span></div>`));
+  const card = el(`<section class="card" aria-label="${esc(v.les)}">
+   <div class="vraag-layout${v.img ? " met-afb" : ""}">
     ${figuur(v)}
+    <div class="col-vraag">
     <div class="qrow">
       <h2 class="qtext">${esc(v.q)}</h2>
       <button class="speak" aria-label="Vraag voorlezen">${ICON_SPEAK}</button>
@@ -376,6 +406,8 @@ function toonVraag() {
       <button class="btn ghost" id="terug">${pos === 0 ? "Menu" : "Vorige"}</button>
       <button class="btn" id="volgende" ${gekozen === undefined ? "disabled" : ""}>${pos === reeks.length - 1 ? "Resultaat" : "Volgende"}</button>
     </div>
+    </div>
+   </div>
   </section>`);
   app.append(card);
   vulImg(card.querySelector(".figure"));
